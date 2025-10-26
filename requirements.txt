@@ -16,3 +16,4 @@ scipy>=1.11.1
 # Optional (remove if causing issues)
 openai>=0.28.0
 python-dotenv>=1.0.0
+missingno>=0.5.2
