@@ -736,7 +736,7 @@ def display_data_info(df):
 
 class LLMAnalyzer:
     def __init__(self):
-        self.api_key = os.getenv('OPENAI_API_KEY')
+        self.api_key = os.getenv('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')
         if self.api_key:
             openai.api_key = self.api_key
         else:
@@ -1025,4 +1025,5 @@ def main():
         """)
 
 if __name__ == "__main__":
+
     main()
