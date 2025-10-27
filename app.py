@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -19,11 +18,7 @@ import openai
 import os
 from dotenv import load_dotenv
 import sys
-
-
 load_dotenv()
-
-
 class Autoencoder(nn.Module):
     def __init__(self, input_dim, encoding_dim=8):
         super(Autoencoder, self).__init__()
@@ -45,12 +40,10 @@ class Autoencoder(nn.Module):
             nn.Dropout(0.2),
             nn.Linear(64, input_dim),
         )
-    
     def forward(self, x):
         encoded = self.encoder(x)
         decoded = self.decoder(encoded)
         return decoded
-
 class PredictiveModel(nn.Module):
     def __init__(self, input_dim, output_dim=1):
         super(PredictiveModel, self).__init__()
@@ -67,11 +60,8 @@ class PredictiveModel(nn.Module):
             nn.ReLU(),
             nn.Linear(32, output_dim)
         )
-    
-    def forward(self, x):
+      def forward(self, x):
         return self.network(x)
-
-
 class PyTorchAnalyzer:
     def __init__(self):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -85,28 +75,18 @@ class PyTorchAnalyzer:
         Detect anomalies using Autoencoder
         """
         if not numerical_cols:
-            return None
-        
-        try:
-       
+            return None    
+        try: 
             X = df[numerical_cols].fillna(df[numerical_cols].mean())
             scaler = StandardScaler()
             X_scaled = scaler.fit_transform(X)
-            
-
             X_tensor = torch.FloatTensor(X_scaled).to(self.device)
-            
-
             input_dim = X_scaled.shape[1]
             autoencoder = Autoencoder(input_dim).to(self.device)
             criterion = nn.MSELoss()
             optimizer = torch.optim.Adam(autoencoder.parameters(), lr=0.001)
-            
-     
             autoencoder.train()
             losses = []
-            
-   
             progress_text = "Training Autoencoder for Anomaly Detection..."
             progress_bar = st.progress(0)
             status_text = st.empty()
@@ -1019,6 +999,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
