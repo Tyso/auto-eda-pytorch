@@ -20,10 +20,9 @@ import os
 from dotenv import load_dotenv
 import sys
 
-# Load environment variables
+
 load_dotenv()
 
-# ==================== PYTORCH MODELS ====================
 
 class Autoencoder(nn.Module):
     def __init__(self, input_dim, encoding_dim=8):
@@ -72,13 +71,12 @@ class PredictiveModel(nn.Module):
     def forward(self, x):
         return self.network(x)
 
-# ==================== PYTORCH ANALYZER ====================
 
 class PyTorchAnalyzer:
     def __init__(self):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         if torch.cuda.is_available():
-            st.sidebar.success(f"🚀 Using GPU: {torch.cuda.get_device_name(0)}")
+            st.sidebar.success(f" Using GPU: {torch.cuda.get_device_name(0)}")
         else:
             st.sidebar.info("⚡ Using CPU for computations")
     
@@ -90,25 +88,25 @@ class PyTorchAnalyzer:
             return None
         
         try:
-            # Prepare data
+       
             X = df[numerical_cols].fillna(df[numerical_cols].mean())
             scaler = StandardScaler()
             X_scaled = scaler.fit_transform(X)
             
-            # Convert to PyTorch tensors
+
             X_tensor = torch.FloatTensor(X_scaled).to(self.device)
             
-            # Initialize and train autoencoder
+
             input_dim = X_scaled.shape[1]
             autoencoder = Autoencoder(input_dim).to(self.device)
             criterion = nn.MSELoss()
             optimizer = torch.optim.Adam(autoencoder.parameters(), lr=0.001)
             
-            # Training loop with progress tracking
+     
             autoencoder.train()
             losses = []
             
-            # Create a progress bar
+   
             progress_text = "Training Autoencoder for Anomaly Detection..."
             progress_bar = st.progress(0)
             status_text = st.empty()
@@ -121,23 +119,23 @@ class PyTorchAnalyzer:
                 optimizer.step()
                 losses.append(loss.item())
                 
-                # Update progress every 10 epochs
+  
                 if epoch % 10 == 0:
                     progress = (epoch + 1) / 100
                     progress_bar.progress(progress)
                     status_text.text(f"Epoch {epoch+1}/100 - Loss: {loss.item():.4f}")
             
             progress_bar.progress(1.0)
-            status_text.text("✅ Training completed!")
+            status_text.text("Training completed!")
             
-            # Calculate reconstruction error
+
             autoencoder.eval()
             with torch.no_grad():
                 reconstructed = autoencoder(X_tensor)
                 reconstruction_error = torch.mean((X_tensor - reconstructed) ** 2, dim=1)
                 errors = reconstruction_error.cpu().numpy()
             
-            # Detect anomalies (top reconstruction errors)
+
             threshold = np.percentile(errors, 100 * (1 - contamination))
             anomalies = errors > threshold
             
@@ -151,7 +149,7 @@ class PyTorchAnalyzer:
             }
             
         except Exception as e:
-            st.error(f"❌ Anomaly detection failed: {str(e)}")
+            st.error(f" Anomaly detection failed: {str(e)}")
             return None
     
     def perform_clustering(self, df, numerical_cols, n_clusters=3):
@@ -192,10 +190,10 @@ class PyTorchAnalyzer:
             }
             
         except Exception as e:
-            st.error(f"❌ Clustering failed: {str(e)}")
+            st.error(f"Clustering failed: {str(e)}")
             return None
 
-# ==================== EDA ANALYSIS FUNCTIONS ====================
+
 
 def perform_comprehensive_eda(df):
     """
@@ -203,55 +201,53 @@ def perform_comprehensive_eda(df):
     """
     results = {}
     
-    # Basic information
+
     results['shape'] = df.shape
     results['data_types'] = df.dtypes.value_counts().to_dict()
     results['missing_data'] = df.isnull().sum().sort_values(ascending=False)
     results['duplicate_rows'] = df.duplicated().sum()
     
-    # Separate numerical and categorical columns
+    
     numerical_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
     
     results['numerical_columns'] = numerical_cols
     results['categorical_columns'] = categorical_cols
     
-    # Descriptive statistics
+   
     results['numerical_stats'] = calculate_detailed_stats(df, numerical_cols)
     results['categorical_stats'] = calculate_categorical_stats(df, categorical_cols)
-    
-    # Correlation analysis
+
     if len(numerical_cols) > 1:
         results['correlation_matrix'] = df[numerical_cols].corr()
         results['high_correlations'] = find_high_correlations(results['correlation_matrix'])
     
-    # Outlier detection (traditional)
+
     results['outliers'] = detect_outliers(df, numerical_cols)
     
-    # Distribution analysis
+
     results['distributions'] = analyze_distributions(df, numerical_cols)
     
-    # Data quality metrics
+
     results['data_quality'] = calculate_data_quality(df)
     
-    # PyTorch-based analysis
+
     pytorch_analyzer = PyTorchAnalyzer()
     
     if numerical_cols:
-        # Anomaly detection
-        with st.spinner("🔍 Detecting anomalies using PyTorch Autoencoder..."):
+
+        with st.spinner(" Detecting anomalies using PyTorch Autoencoder..."):
             results['pytorch_anomalies'] = pytorch_analyzer.detect_anomalies_autoencoder(
                 df, numerical_cols
             )
-        
-        # Clustering
-        with st.spinner("🧮 Performing clustering analysis..."):
+
+        with st.spinner(" Performing clustering analysis..."):
             n_clusters = min(5, len(numerical_cols))  # Dynamic cluster count
             results['pytorch_clustering'] = pytorch_analyzer.perform_clustering(
                 df, numerical_cols, n_clusters=n_clusters
             )
     
-    # Summary
+
     results['summary'] = generate_summary(results, df)
     
     return results
@@ -374,34 +370,33 @@ def generate_summary(eda_results, df):
                                 if df[col].nunique() == 1])
     }
 
-# ==================== VISUALIZATION FUNCTIONS ====================
+
 
 def create_visualizations(df, eda_results):
     """Create comprehensive visualizations"""
     numerical_cols = eda_results['numerical_columns']
     categorical_cols = eda_results['categorical_columns']
     
-    # Distribution plots for numerical variables
+
     if numerical_cols:
-        st.subheader("📈 Numerical Variables Distribution")
+        st.subheader(" Numerical Variables Distribution")
         create_distribution_plots(df, numerical_cols)
     
-    # Categorical variables analysis
+
     if categorical_cols:
-        st.subheader("📊 Categorical Variables Analysis")
+        st.subheader("Categorical Variables Analysis")
         create_categorical_plots(df, categorical_cols)
     
-    # Correlation heatmap
     if len(numerical_cols) > 1:
-        st.subheader("🔥 Correlation Heatmap")
+        st.subheader("Correlation Heatmap")
         create_correlation_heatmap(eda_results['correlation_matrix'])
     
-    # Missing values visualization
+
     if df.isnull().sum().sum() > 0:
-        st.subheader("❓ Missing Values Pattern")
+        st.subheader(" Missing Values Pattern")
         create_missing_values_plot(df)
     
-    # PyTorch-specific visualizations
+
     if 'pytorch_anomalies' in eda_results and eda_results['pytorch_anomalies']:
         create_anomaly_visualizations(df, eda_results)
     
@@ -410,32 +405,32 @@ def create_visualizations(df, eda_results):
 
 def create_distribution_plots(df, numerical_cols):
     """Create distribution plots for numerical variables"""
-    # Show only first 6 columns to avoid overcrowding
+
     display_cols = numerical_cols[:6]
     
     for col in display_cols:
         col1, col2 = st.columns(2)
         
         with col1:
-            # Histogram with KDE
+
             fig = px.histogram(df, x=col, title=f"Distribution of {col}", 
                              marginal="box", nbins=50)
             st.plotly_chart(fig, use_container_width=True)
         
         with col2:
-            # Box plot
+     
             fig = px.box(df, y=col, title=f"Box Plot of {col}")
             st.plotly_chart(fig, use_container_width=True)
 
 def create_categorical_plots(df, categorical_cols):
     """Create plots for categorical variables"""
-    for col in categorical_cols[:4]:  # Limit to first 4 columns
-        value_counts = df[col].value_counts().head(10)  # Top 10 categories
+    for col in categorical_cols[:4]: 
+        value_counts = df[col].value_counts().head(10)  
         
         col1, col2 = st.columns(2)
         
         with col1:
-            # Bar chart
+           
             fig = px.bar(
                 x=value_counts.index, 
                 y=value_counts.values,
@@ -445,7 +440,7 @@ def create_categorical_plots(df, categorical_cols):
             st.plotly_chart(fig, use_container_width=True)
         
         with col2:
-            # Pie chart for top categories
+           
             if len(value_counts) > 1:
                 fig_pie = px.pie(
                     names=value_counts.index, 
@@ -467,7 +462,7 @@ def create_correlation_heatmap(corr_matrix):
 
 def create_missing_values_plot(df):
     """Create missing values visualization"""
-    # Missing values by column
+
     missing_by_col = df.isnull().sum().sort_values(ascending=False)
     missing_by_col = missing_by_col[missing_by_col > 0]
     
@@ -494,7 +489,7 @@ def create_anomaly_visualizations(df, eda_results):
     with col3:
         st.metric("Detection Threshold", f"{anomalies_data['threshold']:.4f}")
     
-    # Anomaly scores distribution
+   
     fig_scores = px.histogram(
         x=anomalies_data['anomaly_scores'],
         title="Anomaly Scores Distribution",
@@ -508,7 +503,6 @@ def create_anomaly_visualizations(df, eda_results):
     )
     st.plotly_chart(fig_scores, use_container_width=True)
     
-    # Training loss
     if 'training_loss' in anomalies_data:
         fig_loss = px.line(
             y=anomalies_data['training_loss'],
@@ -517,7 +511,6 @@ def create_anomaly_visualizations(df, eda_results):
         )
         st.plotly_chart(fig_loss, use_container_width=True)
     
-    # Show anomalous rows
     with st.expander("🔍 View Anomalous Records"):
         anomaly_indices = anomalies_data['anomaly_indices']
         if len(anomaly_indices) > 0:
@@ -541,7 +534,7 @@ def create_clustering_visualizations(df, eda_results):
         total_points = len(clustering_data['cluster_labels'])
         st.metric("Total Data Points", total_points)
     
-    # Cluster distribution
+
     cluster_counts = pd.Series(clustering_data['cluster_labels']).value_counts().sort_index()
     fig_cluster_dist = px.bar(
         x=cluster_counts.index.astype(str), 
@@ -551,7 +544,7 @@ def create_clustering_visualizations(df, eda_results):
     )
     st.plotly_chart(fig_cluster_dist, use_container_width=True)
     
-    # 2D scatter plot if we have at least 2 numerical columns
+    
     if len(numerical_cols) >= 2:
         df_cluster = df.copy()
         df_cluster['Cluster'] = clustering_data['cluster_labels'].astype(str)
@@ -566,11 +559,11 @@ def create_clustering_visualizations(df, eda_results):
         )
         st.plotly_chart(fig_clusters, use_container_width=True)
 
-# ==================== DISPLAY FUNCTIONS ====================
+
 
 def display_statistics(eda_results):
     """Display statistical results"""
-    st.subheader("📊 Descriptive Statistics")
+    st.subheader(" Descriptive Statistics")
     
     if 'numerical_stats' in eda_results and not eda_results['numerical_stats'].empty:
         st.write("**Numerical Variables Statistics:**")
@@ -584,7 +577,7 @@ def display_statistics(eda_results):
         st.write("**Correlation Matrix:**")
         st.dataframe(eda_results['correlation_matrix'].round(3), use_container_width=True)
         
-        # Show high correlations
+
         if 'high_correlations' in eda_results and eda_results['high_correlations']:
             st.write("**Highly Correlated Features (|r| > 0.8):**")
             high_corr_df = pd.DataFrame(eda_results['high_correlations'])
@@ -592,7 +585,7 @@ def display_statistics(eda_results):
 
 def display_data_quality(df, eda_results):
     """Display data quality assessment"""
-    st.subheader("🔍 Data Quality Report")
+    st.subheader(" Data Quality Report")
     
     col1, col2 = st.columns(2)
     
@@ -614,7 +607,7 @@ def display_data_quality(df, eda_results):
         })
         st.dataframe(dtype_info, use_container_width=True)
     
-    # Outlier information
+
     if 'outliers' in eda_results:
         st.write("**Outlier Analysis:**")
         outlier_data = []
@@ -629,11 +622,11 @@ def display_data_quality(df, eda_results):
 
 def display_ml_analysis(df, eda_results):
     """Display machine learning analysis results"""
-    st.subheader("🤖 PyTorch Machine Learning Analysis")
+    st.subheader(" PyTorch Machine Learning Analysis")
     
     # Anomaly Detection Results
     if 'pytorch_anomalies' in eda_results and eda_results['pytorch_anomalies']:
-        st.write("### 🔍 Anomaly Detection")
+        st.write("###  Anomaly Detection")
         anomalies_data = eda_results['pytorch_anomalies']
         
         col1, col2, col3 = st.columns(3)
@@ -644,7 +637,7 @@ def display_ml_analysis(df, eda_results):
         with col3:
             st.metric("Detection Threshold", f"{anomalies_data['threshold']:.4f}")
         
-        # Show some anomalous records
+
         with st.expander("View Detailed Anomaly Results"):
             if len(anomalies_data['anomaly_indices']) > 0:
                 st.write(f"**First 10 Anomalous Records:**")
@@ -653,7 +646,7 @@ def display_ml_analysis(df, eda_results):
             else:
                 st.info("No anomalies detected in the dataset")
     
-    # Clustering Results
+
     if 'pytorch_clustering' in eda_results and eda_results['pytorch_clustering']:
         st.write("### 🧮 Clustering Analysis")
         clustering_data = eda_results['pytorch_clustering']
@@ -664,7 +657,7 @@ def display_ml_analysis(df, eda_results):
         with col2:
             st.metric("Within-Cluster Variance", f"{clustering_data['inertia']:.2f}")
         
-        # Cluster statistics
+       
         st.write("**Cluster Statistics:**")
         cluster_stats = []
         for cluster_id, stats in clustering_data['cluster_stats'].items():
@@ -678,7 +671,7 @@ def display_ml_analysis(df, eda_results):
 
 def display_summary(eda_results):
     """Display EDA summary"""
-    st.subheader("📝 EDA Summary")
+    st.subheader(" EDA Summary")
     
     if 'summary' in eda_results:
         summary = eda_results['summary']
@@ -704,10 +697,10 @@ def display_summary(eda_results):
 
 def display_data_info(df):
     """Display detailed column information"""
-    st.subheader("📁 Detailed Column Information")
+    st.subheader(" Detailed Column Information")
     
     for column in df.columns:
-        with st.expander(f"📊 {column} ({df[column].dtype})"):
+        with st.expander(f" {column} ({df[column].dtype})"):
             col1, col2 = st.columns(2)
             
             with col1:
@@ -732,7 +725,7 @@ def display_data_info(df):
                 for val in sample_vals:
                     st.write(f"- {val}")
 
-# ==================== LLM INTEGRATION ====================
+
 
 class LLMAnalyzer:
     def __init__(self):
@@ -740,7 +733,7 @@ class LLMAnalyzer:
         if self.api_key:
             openai.api_key = self.api_key
         else:
-            st.sidebar.warning("⚠️ OpenAI API key not found. LLM features disabled.")
+            st.sidebar.warning(" OpenAI API key not found. LLM features disabled.")
     
     def generate_insights(self, df, eda_results):
         """Generate AI-powered insights using LLM"""
@@ -748,7 +741,7 @@ class LLMAnalyzer:
             return {"error": "OpenAI API key not configured"}
         
         try:
-            # Prepare data summary for LLM
+        
             data_summary = self.prepare_data_summary(df, eda_results)
             
             prompt = f"""
@@ -780,8 +773,7 @@ class LLMAnalyzer:
             )
             
             insights_text = response.choices[0].message.content.strip()
-            
-            # Try to parse as JSON, fallback to text
+
             try:
                 import json
                 return json.loads(insights_text)
@@ -806,25 +798,25 @@ class LLMAnalyzer:
         Numerical Columns ({len(eda_results['numerical_columns'])}):
         """
         
-        # Add numerical columns summary
-        for col in eda_results['numerical_columns'][:10]:  # Limit to first 10
+        
+        for col in eda_results['numerical_columns'][:10]:  
             stats = eda_results['numerical_stats'].loc[col]
             summary += f"\n  - {col}: mean={stats['mean']:.2f}, std={stats['std']:.2f}, min={stats['min']:.2f}, max={stats['max']:.2f}"
         
-        # Add categorical columns summary
+
         if eda_results['categorical_columns']:
             summary += f"\n\nCategorical Columns ({len(eda_results['categorical_columns'])}):"
-            for col in eda_results['categorical_columns'][:5]:  # Limit to first 5
+            for col in eda_results['categorical_columns'][:5]:  
                 unique_vals = df[col].nunique()
                 summary += f"\n  - {col}: {unique_vals} unique values"
         
-        # Add correlation insights
+
         if 'high_correlations' in eda_results and eda_results['high_correlations']:
             summary += f"\n\nHigh Correlations (|r| > 0.8):"
             for corr in eda_results['high_correlations'][:5]:
                 summary += f"\n  - {corr['feature1']} & {corr['feature2']}: {corr['correlation']:.3f}"
         
-        # Add anomaly information
+
         if 'pytorch_anomalies' in eda_results and eda_results['pytorch_anomalies']:
             anomaly_data = eda_results['pytorch_anomalies']
             summary += f"\n\nAnomaly Detection:"
@@ -839,36 +831,36 @@ def generate_eda_insights(df, eda_results):
 
 def display_llm_insights(insights):
     """Display LLM-generated insights"""
-    st.subheader("🧠 AI-Powered Insights")
+    st.subheader(" AI-Powered Insights")
     
     if insights and 'error' not in insights:
         if 'key_findings' in insights:
-            st.write("### 🔑 Key Findings")
+            st.write("###  Key Findings")
             for i, finding in enumerate(insights['key_findings'], 1):
                 st.write(f"{i}. {finding}")
         
         if 'recommendations' in insights:
-            st.write("### 💡 Recommendations")
+            st.write("###  Recommendations")
             for i, rec in enumerate(insights['recommendations'], 1):
                 st.write(f"{i}. {rec}")
         
         if 'anomalies' in insights:
-            st.write("### ⚠️ Potential Anomalies")
+            st.write("###  Potential Anomalies")
             for i, anomaly in enumerate(insights['anomalies'], 1):
                 st.write(f"{i}. {anomaly}")
         
         if 'business_insights' in insights:
-            st.write("### 💼 Business Insights")
+            st.write("###  Business Insights")
             for i, insight in enumerate(insights['business_insights'], 1):
                 st.write(f"{i}. {insight}")
                 
     elif 'raw_insights' in insights:
-        st.write("### 📋 AI Analysis")
+        st.write("###  AI Analysis")
         st.write(insights['raw_insights'])
     else:
         st.warning("LLM insights not available. Please check your API configuration or enable AI insights.")
 
-# ==================== MAIN STREAMLIT APP ====================
+
 
 def main():
     st.set_page_config(
@@ -878,11 +870,11 @@ def main():
         initial_sidebar_state="expanded"
     )
     
-    st.title("📊 Automated EDA with PyTorch & LLM")
+    st.title(" Automated EDA with PyTorch & LLM")
     st.markdown("Upload your CSV or Excel file and get comprehensive exploratory data analysis with AI-powered insights!")
     
     # Sidebar
-    st.sidebar.title("🔧 Configuration")
+    st.sidebar.title(" Configuration")
     
     # File upload
     uploaded_file = st.sidebar.file_uploader(
@@ -1027,4 +1019,5 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
